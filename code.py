@@ -22,6 +22,7 @@ BLEU_TELEMACHUS = (50, 150, 255)
 ROUGE_MONSTRE = (255, 50, 50)
 OR_LEGENDAIRE = (255, 215, 0)
 VIOLET_SOMBRE = (40, 0, 60)
+VIOLET_ANTINOUS = (138, 43, 226)  # Nouvelle couleur pour les prétendants
 
 # Polices
 try:
@@ -39,20 +40,43 @@ evenements_paroles = [
     (20.0, "Stuck in my bedroom living in this world you left behind"),
     (25.0, "Dreaming of all these monsters that I'll never get to fight"),
     (33.0, "Cuz I'm stuck with your stories but no clue who you are"),
+    (38.0, "No idea if you're dead or just too far"),
     (42.0, "Somebody tell me... Come and give me a sign"),
-    (53.0, "Give me sirens and a cyclops!"),
+    (48.0, "If I fight those monsters is it you I'll fight?"),
+    (53.0, "If so then give me sirens and a cyclops!"),
     (58.0, "Give me giants and a hydra!"),
-    (62.0, "I want to be LEGENDARY!"),
-    (81.0, "108 old faces who call me small..."),
-    (102.0, "Somebody help me... Come and give me the strength"),
-    (112.0, "Give me sirens and a cyclops!"),
-    (116.0, "Give me giants and a hydra!"),
-    (122.0, "I want to be LEGENDARY!"),
+    (62.0, "I know life and fate are scary..."),
+    (65.0, "But I want to be LEGENDARY!"),
+    (81.0, "There are strangers in our halls trying to win the heart of my mom"),
+    (88.0, "108 old faces who call me small"),
+    (91.0, "They keep taking space and it's not much longer we can stall"),
+    (97.0, "Cuz they're getting impatient, dangerous too"),
+    (102.0, "And I would fight them if I was half as strong as you"),
+    (108.0, "Somebody help me... Come and give me the strength"),
+    (112.0, "Can I do whatever it takes to keep my mom safe?"),
+    (114.0, "If so then give me sirens and a cyclops!"),
+    (121.0, "Give me giants and a hydra!"),
+    (126.0, "I know life and fate are scary..."),
+    (129.0, "But I want to be LEGENDARY!"),
     (138.0, "Where is he? Where is the man who loved you?"),
-    (164.0, "Don't you dare call my mother a tramp!"),
-    (174.0, "Somebody tell me... come and give me a sign!"),
+    (146.0, "Where is he? Where is the man with whom you'll spend your life?"),
+    (153.0, "Cuz it's been 20 years..."),
+    (155.0, "Just give me a chance, a single opportunity"),
+    (161.0, "And I'll overcome these obstacles and scrutiny"),
+    (164.0, "Boy, when's your tramp of a mother going to choose a new husband?"),
+    (170.0, "Why don't you open her room so we can have fun with her?"),
+    (174.0, "Don't you dare call my mother a tramp!"),
+    (178.0, "I just did. What you gonna do about it, champ?"),
+    (186.0, "Somebody tell me... come and give me a sign!"),
+    (190.0, "If I fight this monster, is it you I'll find?!"),
     (195.0, "It's just me myself and I..."),
-    (230.0, "...")  # Fin
+    (200.0, "Stuck in my bedroom living in this world you left behind"),
+    (204.0, "Dreaming of all these monsters that I'll never get to fight"),
+    (211.0, "Cuz I'm stuck with your stories but no clue who you are"),
+    (218.0, "No idea if you're dead or just too far"),
+    (221.0, "Somebody tell me... come and give me a sign..."),
+    (228.0, "If I fight those monsters..."),
+    (232.0, "...")  # Fin
 ]
 
 
@@ -145,7 +169,7 @@ def main():
 
                 # Déclenchement d'effets visuels selon les mots clés
                 texte_min = texte_actuel.lower()
-                if "cyclops" in texte_min or "hydra" in texte_min or "monsters" in texte_min:
+                if "cyclops" in texte_min or "hydra" in texte_min or "monsters" in texte_min or "monster," in texte_min:
                     # Apparition des monstres (explosions rouges sur les bords)
                     particules.extend(
                         generer_explosion(random.randint(50, LARGEUR - 50), random.randint(50, HAUTEUR - 50),
@@ -157,6 +181,18 @@ def main():
                     particules.extend(generer_explosion(centre_x, centre_y, OR_LEGENDAIRE, 300, 20, 20))
                     intensite_fond = 150
                     tremblement = 20
+                elif "tramp" in texte_min or "champ" in texte_min or "strangers" in texte_min or "108" in texte_min:
+                    # Apparition des prétendants (Antinous - Violet)
+                    particules.extend(
+                        generer_explosion(random.randint(100, LARGEUR - 100), random.randint(100, HAUTEUR - 100),
+                                          VIOLET_ANTINOUS, 200, 15, 12))
+                    intensite_fond = 60
+                    tremblement = 5
+                elif "strength" in texte_min or "dare" in texte_min:
+                    # Sursaut de courage de Telemachus (Blanc)
+                    particules.extend(generer_explosion(centre_x, centre_y, BLANC, 200, 18, 10))
+                    intensite_fond = 100
+                    tremblement = 15
 
         # Réduction progressive des effets (Tremblement de caméra et flash d'arrière plan)
         if intensite_fond > 0: intensite_fond -= 3
