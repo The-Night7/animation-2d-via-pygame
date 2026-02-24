@@ -209,6 +209,23 @@ class Personnage:
         rayon_tete = 22 * self.taille
         pygame.draw.circle(surface, PEAU, (int(t_x), int(t_y - rayon_tete + 5)), int(rayon_tete))
 
+        # Visage : bouche animée
+        # Pour donner l'impression que le personnage parle, on anime la hauteur de la bouche
+        # lorsque ``parle_actuellement`` est vrai. Le mouvement se base sur une fonction sinusoïdale
+        # afin d'ouvrir et fermer la bouche à un rythme régulier. S'il ne parle pas, la bouche est
+        # simplement une fine ligne. Cette technique est une approximation simple du mouvement
+        # des lèvres, mais elle ajoute du dynamisme à l'animatic.
+        mouth_width = 15 * self.taille
+        if self.parle_actuellement:
+            # Hauteur variable entre 4 et 12 pixels selon l'onde sinusoïdale
+            mouth_height = max(4, 8 + math.sin(temps * 12) * 4)
+        else:
+            mouth_height = 2
+        mouth_y = (t_y - rayon_tete + 20)  # Position verticale approximative de la bouche
+        mouth_rect = pygame.Rect(int(t_x - mouth_width / 2), int(mouth_y), int(mouth_width), int(mouth_height))
+        # Dessiner une ellipse noire pour représenter la bouche
+        pygame.draw.ellipse(surface, NOIR, mouth_rect)
+
         # Bras (Lignes)
         epaule_x = t_x + (15 * direction * self.taille)
         pygame.draw.line(surface, PEAU, (t_x, t_y + 10),
