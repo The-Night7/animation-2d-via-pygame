@@ -23,6 +23,8 @@ ROUGE_MONSTRE = (255, 50, 50)
 OR_LEGENDAIRE = (255, 215, 0)
 VIOLET_SOMBRE = (40, 0, 60)
 VIOLET_ANTINOUS = (138, 43, 226)  # Nouvelle couleur pour les prétendants
+GRIS = (100, 100, 100)
+VERT_VALIDE = (50, 200, 50)
 
 # Polices
 try:
@@ -81,6 +83,23 @@ evenements_paroles = [
 
 
 # --- Classes pour les effets visuels ---
+class Etoile:
+    def __init__(self):
+        self.x = random.randint(0, LARGEUR)
+        self.y = random.randint(0, HAUTEUR)
+        self.vitesse = random.uniform(0.2, 1.5)
+        self.taille = random.uniform(1, 3)
+
+    def mettre_a_jour(self):
+        self.x -= self.vitesse
+        if self.x < 0:
+            self.x = LARGEUR
+            self.y = random.randint(0, HAUTEUR)
+
+    def dessiner(self, surface):
+        pygame.draw.circle(surface, (255, 255, 255, 100), (int(self.x), int(self.y)), int(self.taille))
+
+
 class Particule:
     def __init__(self, x, y, couleur, vitesse_x, vitesse_y, duree_vie, taille_init):
         self.x = x
@@ -91,8 +110,10 @@ class Particule:
         self.duree_vie = duree_vie
         self.age = 0
         self.taille = taille_init
+        self.gravite = 0.2  # Ajout de la gravité
 
     def mettre_a_jour(self):
+        self.vitesse_y += self.gravite
         self.x += self.vitesse_x
         self.y += self.vitesse_y
         self.age += 1
@@ -125,29 +146,57 @@ def generer_explosion(x, y, couleur, nombre=50, vitesse_max=8, taille_max=8):
 def main():
     # --- Chargement de la musique ---
     fichier_musique = "legendary.mp3"
+    musique_chargee = False
 
     if os.path.exists(fichier_musique):
         try:
             pygame.mixer.music.load(fichier_musique)
-            pygame.mixer.music.play()
-            print("▶️ Musique lancée !")
+            musique_chargee = True
         except Exception as e:
             print(f"Erreur lors du chargement de la musique : {e}")
-    else:
-        print(f"⚠️ ATTENTION : Le fichier '{fichier_musique}' est introuvable.")
-        print("💡 L'animation se lancera sans le son.")
-        print("👉 Placez un fichier nommé 'legendary.mp3' dans le même dossier que ce script pour activer l'audio.")
+
+    # Écran d'accueil
+    ecran_accueil = True
+    while ecran_accueil:
+        ecran.fill(NOIR)
+        titre = police_titre.render("EPIC: The Musical - Legendary", True, OR_LEGENDAIRE)
+        ecran.blit(titre, (LARGEUR // 2 - titre.get_width() // 2, HAUTEUR // 2 - 100))
+
+        if musique_chargee:
+            msg = police_texte.render("Musique trouvée ! Appuyez sur ESPACE pour commencer.", True, VERT_VALIDE)
+        else:
+            msg = police_texte.render("Fichier 'legendary.mp3' introuvable. Appuyez sur ESPACE pour lancer sans son.",
+                                      True, ROUGE_MONSTRE)
+            sous_msg = police_texte.render("Placez le fichier mp3 dans le même dossier pour l'activer.", True, GRIS)
+            ecran.blit(sous_msg, (LARGEUR // 2 - sous_msg.get_width() // 2, HAUTEUR // 2 + 80))
+
+        ecran.blit(msg, (LARGEUR // 2 - msg.get_width() // 2, HAUTEUR // 2 + 20))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                ecran_accueil = False
+
+    if musique_chargee:
+        pygame.mixer.music.play()
+        print("▶️ Musique lancée !")
 
     en_cours = True
     temps_debut = time.time()
 
     particules = []
+    etoiles = [Etoile() for _ in range(100)]  # Ajout du fond étoilé
     index_parole_actuelle = 0
     texte_actuel = ""
     intensite_fond = 0
     tremblement = 0
 
     centre_x, centre_y = LARGEUR // 2, HAUTEUR // 2
+    duree_totale_estimee = 235.0  # Durée de la chanson en secondes
 
     while en_cours:
         temps_ecoule = time.time() - temps_debut
@@ -202,13 +251,29 @@ def main():
         offset_y = random.randint(-tremblement, tremblement) if tremblement > 0 else 0
 
         # Pulsation de la musique simulée par un sinus mathématique
-        battement = math.sin(temps_ecoule * 4) * 10
+        frequence_battement = 8 if intensite_fond > 50 else 4
+        battement = math.sin(temps_ecoule * frequence_battement) * (15 if intensite_fond > 50 else 10)
         rayon_perso = 40 + battement if temps_ecoule > 16 else 30
 
         # --- Rendu Graphique ---
         # Dessin du fond qui flashe
         couleur_fond = (min(255, NOIR[0] + intensite_fond), NOIR[1], NOIR[2])
         ecran.fill(couleur_fond)
+
+        # Dessin des étoiles
+        for etoile in etoiles:
+            etoile.mettre_a_jour()
+            etoile.dessiner(ecran)
+
+        # Onde sonore visuelle (cercles concentriques)
+        if temps_ecoule > 16:
+            for i in range(3):
+                rayon_onde = rayon_perso + 20 + (i * 30) + (battement * 1.5)
+                alpha_onde = max(0, 100 - i * 30 + (intensite_fond // 4))
+                surf_onde = pygame.Surface((int(rayon_onde * 2 + 4), int(rayon_onde * 2 + 4)), pygame.SRCALPHA)
+                pygame.draw.circle(surf_onde, (*BLEU_TELEMACHUS, alpha_onde),
+                                   (int(rayon_onde + 2), int(rayon_onde + 2)), int(rayon_onde), 2)
+                ecran.blit(surf_onde, (centre_x - rayon_onde + offset_x, centre_y - rayon_onde + offset_y))
 
         # Dessin de l'aura de Telemachus (le héros au centre)
         surf_aura = pygame.Surface((200, 200), pygame.SRCALPHA)
@@ -240,8 +305,20 @@ def main():
 
             surf_fond_texte = pygame.Surface((rect_fond.width, rect_fond.height), pygame.SRCALPHA)
             pygame.draw.rect(surf_fond_texte, (0, 0, 0, 180), surf_fond_texte.get_rect(), border_radius=15)
+
+            # Bordure dynamique du texte
+            couleur_bordure = OR_LEGENDAIRE if "LEGENDARY" in texte_actuel else BLEU_TELEMACHUS
+            pygame.draw.rect(surf_fond_texte, couleur_bordure, surf_fond_texte.get_rect(), width=2, border_radius=15)
+
             ecran.blit(surf_fond_texte, (rect_fond.x, rect_fond.y))
             ecran.blit(rendu_texte, rect_texte)
+
+        # Barre de progression
+        progression = min(1.0, temps_ecoule / duree_totale_estimee)
+        largeur_barre = int(LARGEUR * progression)
+        pygame.draw.rect(ecran, (50, 50, 50), (0, HAUTEUR - 10, LARGEUR, 10))
+        pygame.draw.rect(ecran, OR_LEGENDAIRE if intensite_fond > 100 else BLEU_TELEMACHUS,
+                         (0, HAUTEUR - 10, largeur_barre, 10))
 
         # Affichage du chronomètre (utile pour vérifier la synchronisation)
         texte_timer = pygame.font.Font(None, 24).render(f"Temps: {temps_ecoule:.1f}s", True, (150, 150, 150))
