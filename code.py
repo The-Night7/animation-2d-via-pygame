@@ -79,20 +79,25 @@ evenements_paroles = [
     (133.0, "The Minotaurs, even Cerberus", "Telemachus"),
     (136.0, "I know life and fate are scary", "Telemachus"),
     (139.0, "But I wanna be legendary!", "Telemachus"),
-    (145.0, "Where is he?", "Telemachus"),
-    (148.0, "Where is the man who'll have you to wife?", "Telemachus"),
-    (155.0, "Where is he?", "Telemachus"),
-    (158.0, "Where is the man with whom you'll spend your life?", "Telemachus"),
-    (165.0, "'Cause it's been twenty years...", "Telemachus"),
-    (168.0, "And we still have no king", "Telemachus"),
-    (171.0, "Give me a chance, a single opportunity", "Telemachus"),
-    (175.0, "I'll overcome these obstacles and scrutiny", "Telemachus"),
+
+    # --- Différenciation des voix (Télémaque vs Les Hommes/Prétendants) ---
+    (144.0, "Where is he?", "Antinous"),
+    (147.0, "Where is the man who'll have you to wife? Oh-oh", "Antinous"),  # Les hommes répondent
+    (154.0, "Where is he?", "Telemachus"),
+    (157.0, "Where is the man with whom you'll spend your life?", "Antinous"),
+    (164.0, "'Cause it's been twenty years (twenty years)", "Antinous"),
+    (168.0, "And we still have no king", "Antinous"),
+
+    (171.0, "Give me a chance, a single opportunity and", "Telemachus"),
+    (175.0, "I'll overcome these obstacles and scrutiny and", "Telemachus"),
+
     (179.0, "Boy...", "Antinous"),
     (181.0, "When's your tramp of a mother gonna choose a new husband?", "Antinous"),
     (187.0, "Why don't you open her room so we can have fun with her?", "Antinous"),
     (193.0, "Don't you dare call my mother a tramp!", "Telemachus"),
     (197.0, "I just did.", "Antinous"),
     (200.0, "Whatchu gonna do about it, champ?", "Antinous"),
+
     (206.0, "Somebody tell me", "Telemachus"),
     (210.0, "Come and give me a sign", "Telemachus"),
     (216.0, "If I fight this monster", "Telemachus"),
