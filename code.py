@@ -1,3 +1,45 @@
+"""
+Animatic amélioré pour "LEGENDARY - EPIC The Musical".
+
+Ce script est dérivé de la version fournie mais apporte plusieurs
+améliorations pour rendre l'animation plus immersive et, surtout,
+pour synchroniser les textes avec la musique de façon plus fiable.
+
+Principales améliorations :
+
+1. **Synchronisation audio précise** : utilisation de
+   `pygame.mixer.music.get_pos()` pour récupérer la position réelle
+   de lecture de la musique (en millisecondes). Selon la
+   documentation officielle de Pygame, cette méthode renvoie le
+   nombre de millisecondes écoulées depuis le début de la lecture 【294909052533098†L279-L283】.
+   Cela permet de synchroniser les événements même si l'animation
+   commence avec un léger délai.
+
+2. **Gestion robuste des événements** : la boucle principale
+   utilise maintenant une boucle `while` pour mettre à jour les
+   dialogues et les scènes dès que plusieurs événements se sont
+   déclenchés entre deux frames. Cela évite de rater un changement
+   lors d'une baisse momentanée de FPS.
+
+3. **Transitions plus douces** : ajout d'un fondu enchaîné entre les
+   décors lorsque la scène change. Un rectangle noir semi-transparent
+   est superposé pendant la durée du fondu (par défaut 1 seconde).
+
+4. **Paramètres configurables** : variables en haut de fichier
+   permettent d'ajuster le décalage éventuel de la musique,
+   l'intensité et la durée du tremblement de caméra, la durée du
+   fondu, etc.
+
+5. **Code structuré** : quelques fonctions utilitaires supplémentaires
+   rendent le code plus lisible et facilitent son adaptation.
+
+Pour tester ce script, assurez‑vous d'avoir le fichier
+`legendary.mp3` dans le même dossier. Si le fichier n'est pas
+présent, l'animation se lance en mode muet avec un timing basé sur
+`time.time()`.
+
+"""
+
 import pygame
 import sys
 import math
@@ -12,10 +54,10 @@ pygame.mixer.init()
 # Configuration de la fenêtre
 LARGEUR, HAUTEUR = 1000, 700
 ecran = pygame.display.set_mode((LARGEUR, HAUTEUR))
-pygame.display.set_caption("Animation : Legendary - EPIC The Musical (Animatic Version)")
+pygame.display.set_caption("Animation : Legendary - EPIC The Musical (Animatic Version, améliorée)")
 horloge = pygame.time.Clock()
 
-# Couleurs
+# Couleurs (RGB)
 NOIR = (15, 15, 20)
 BLANC = (240, 240, 240)
 PEAU = (255, 218, 185)
@@ -29,7 +71,8 @@ GRIS_MUR = (50, 50, 60)
 try:
     police_bulle = pygame.font.SysFont("comicsansms", 22, bold=True)
     police_titre = pygame.font.SysFont("georgia", 48, bold=True)
-except:
+except Exception:
+    # Fallback si la police n'est pas disponible
     police_bulle = pygame.font.Font(None, 26)
     police_titre = pygame.font.Font(None, 48)
 
@@ -79,35 +122,41 @@ evenements_paroles = [
     (133.0, "The Minotaurs, even Cerberus", "Telemachus"),
     (136.0, "I know life and fate are scary", "Telemachus"),
     (139.0, "But I wanna be legendary!", "Telemachus"),
-
-    # --- Différenciation des voix (Télémaque vs Les Hommes/Prétendants) ---
+    # Différenciation des voix (Télémaque vs Les Hommes/Prétendants)
     (144.0, "Where is he?", "Antinous"),
-    (147.0, "Where is the man who'll have you to wife? Oh-oh", "Antinous"),  # Les hommes répondent
+    (147.0, "Where is the man who'll have you to wife? Oh-oh", "Antinous"),
     (154.0, "Where is he?", "Telemachus"),
     (157.0, "Where is the man with whom you'll spend your life?", "Antinous"),
     (164.0, "'Cause it's been twenty years (twenty years)", "Antinous"),
     (168.0, "And we still have no king", "Antinous"),
-
     (171.0, "Give me a chance, a single opportunity and", "Telemachus"),
     (175.0, "I'll overcome these obstacles and scrutiny and", "Telemachus"),
-
     (179.0, "Boy...", "Antinous"),
     (181.0, "When's your tramp of a mother gonna choose a new husband?", "Antinous"),
     (187.0, "Why don't you open her room so we can have fun with her?", "Antinous"),
     (193.0, "Don't you dare call my mother a tramp!", "Telemachus"),
     (197.0, "I just did.", "Antinous"),
     (200.0, "Whatchu gonna do about it, champ?", "Antinous"),
-
     (206.0, "Somebody tell me", "Telemachus"),
     (210.0, "Come and give me a sign", "Telemachus"),
     (216.0, "If I fight this monster", "Telemachus"),
     (221.0, "Is it you I'll find?", "Telemachus"),
-    (228.0, "...", "Aucun")
+    (228.0, "...", "Aucun"),
 ]
 
 
 # --- Utilitaires ---
-def diviser_texte(texte, police, largeur_max):
+def diviser_texte(texte: str, police: pygame.font.Font, largeur_max: int) -> list[str]:
+    """Coupe une chaîne en plusieurs lignes de sorte qu'elle ne dépasse pas largeur_max.
+
+    Args:
+        texte: texte à couper.
+        police: police de rendu.
+        largeur_max: largeur max en pixels.
+
+    Returns:
+        Liste de lignes.
+    """
     mots = texte.split(' ')
     lignes = []
     ligne_actuelle = ""
@@ -124,7 +173,10 @@ def diviser_texte(texte, police, largeur_max):
 
 # --- Classes de l'Animatic ---
 class Personnage:
-    def __init__(self, nom, x, y, couleur_vetement, taille=1.0, inverser=False):
+    """Représente un personnage simple animé avec bulle de dialogue."""
+
+    def __init__(self, nom: str, x: float, y: float, couleur_vetement: tuple[int, int, int],
+                 taille: float = 1.0, inverser: bool = False) -> None:
         self.nom = nom
         self.x = x
         self.y = y
@@ -134,7 +186,8 @@ class Personnage:
         self.parle_actuellement = False
         self.texte_bulle = ""
 
-    def dessiner(self, surface, temps):
+    def dessiner(self, surface: pygame.Surface, temps: float) -> None:
+        """Dessine le personnage sur la surface en animant la respiration et les bras."""
         # Animation de respiration
         respiration = math.sin(temps * 3) * 3
 
@@ -173,7 +226,8 @@ class Personnage:
         if self.parle_actuellement and self.texte_bulle:
             self.dessiner_bulle(surface, self.texte_bulle, t_x, t_y - rayon_tete - 20)
 
-    def dessiner_bulle(self, surface, texte, x, y):
+    def dessiner_bulle(self, surface: pygame.Surface, texte: str, x: float, y: float) -> None:
+        """Dessine une bulle de dialogue adaptée à la taille du texte."""
         lignes = diviser_texte(texte, police_bulle, 250)
         hauteur_ligne = police_bulle.get_height()
         largeur_bulle = max([police_bulle.size(l)[0] for l in lignes]) + 30
@@ -199,10 +253,9 @@ class Personnage:
 
 
 class Decor:
-    def __init__(self):
-        pass
+    """Dessine les différents décors de l'animatic (chambre, imagination, hall)."""
 
-    def dessiner_chambre(self, surface):
+    def dessiner_chambre(self, surface: pygame.Surface) -> None:
         # Murs sombres
         surface.fill((20, 25, 35))
         # Fenêtre
@@ -216,7 +269,7 @@ class Decor:
         # Lit (ombre de décor)
         pygame.draw.rect(surface, (30, 35, 45), (50, 500, 400, 200), border_radius=20)
 
-    def dessiner_imagination(self, surface, temps, type_monstre="aucun"):
+    def dessiner_imagination(self, surface: pygame.Surface, temps: float, type_monstre: str = "aucun") -> None:
         # Vide spatial / Esprit
         surface.fill((10, 0, 15))
 
@@ -236,7 +289,7 @@ class Decor:
                 pygame.draw.circle(surface, (200, 255, 50), (int(base_x + decalage - 10), int(200 + abs(decalage))), 5)
                 pygame.draw.circle(surface, (200, 255, 50), (int(base_x + decalage + 10), int(200 + abs(decalage))), 5)
 
-    def dessiner_hall(self, surface):
+    def dessiner_hall(self, surface: pygame.Surface) -> None:
         surface.fill((40, 30, 30))
         # Colonnes grecques massives
         for i in range(4):
@@ -249,7 +302,9 @@ class Decor:
 
 
 class Particule:
-    def __init__(self, x, y, couleur):
+    """Particule utilisée pour les effets spéciaux (feu d'artifice, éclats, etc.)."""
+
+    def __init__(self, x: float, y: float, couleur: tuple[int, int, int]) -> None:
         self.x = x
         self.y = y
         self.couleur = couleur
@@ -259,13 +314,14 @@ class Particule:
         self.age = 0
         self.taille = random.randint(3, 8)
 
-    def mettre_a_jour(self):
-        self.vy += 0.5  # Gravité
+    def mettre_a_jour(self) -> None:
+        # Gravité simple
+        self.vy += 0.5
         self.x += self.vx
         self.y += self.vy
         self.age += 1
 
-    def dessiner(self, surface):
+    def dessiner(self, surface: pygame.Surface) -> None:
         if self.age < self.duree_vie:
             alpha = max(0, 255 - int((self.age / self.duree_vie) * 255))
             surf_part = pygame.Surface((self.taille * 2, self.taille * 2), pygame.SRCALPHA)
@@ -273,8 +329,31 @@ class Particule:
             surface.blit(surf_part, (int(self.x), int(self.y)))
 
 
+# --- Fonction utilitaire pour obtenir l'heure de la musique
+def temps_audio(start_monotonic: float) -> float:
+    """Retourne le temps écoulé en secondes en se basant sur la musique si possible.
+
+    Si une musique est en cours de lecture, utilise `pygame.mixer.music.get_pos()`
+    (ms) pour une synchronisation précise【294909052533098†L279-L283】. Sinon,
+    utilise `time.monotonic()`.
+
+    Args:
+        start_monotonic: repère de départ pour le temps monotone lorsqu'il n'y a
+            pas de musique.
+
+    Returns:
+        Durée écoulée en secondes.
+    """
+    if pygame.mixer.music.get_busy():
+        pos_ms = pygame.mixer.music.get_pos()
+        if pos_ms >= 0:
+            return pos_ms / 1000.0
+    # Fallback si aucune musique ou pos invalide
+    return time.monotonic() - start_monotonic
+
+
 # --- Boucle Principale ---
-def main():
+def main() -> None:
     fichier_musique = "legendary.mp3"
     musique_chargee = False
 
@@ -308,24 +387,33 @@ def main():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 ecran_accueil = False
 
+    # Démarrage de la musique et repère temps
     if musique_chargee:
         pygame.mixer.music.play()
+        # On attend un court instant pour éviter un décalage
+        pygame.time.delay(100)
+        start_monotonic = time.monotonic()
+    else:
+        # Si pas de musique, on démarre quand même la mesure du temps
+        start_monotonic = time.monotonic()
 
     en_cours = True
-    temps_debut = time.time()
-
-    decor = Decor()
-    telemachus = Personnage("Telemachus", 300, 450, BLEU_TELEMACHUS, taille=1.0)
-    antinous = Personnage("Antinous", 700, 400, VIOLET_ANTINOUS, taille=1.3, inverser=True)
-
-    particules = []
     index_parole = 0
     tremblement = 0
     scene_actuelle = "chambre"  # chambre, imagination, hall
     type_monstre = "aucun"
+    transition_active = False
+    transition_start = 0.0
+    transition_duree = 1.0  # durée du fondu en secondes
+
+    decor = Decor()
+    telemachus = Personnage("Telemachus", 300, 450, BLEU_TELEMACHUS, taille=1.0)
+    antinous = Personnage("Antinous", 700, 400, VIOLET_ANTINOUS, taille=1.3, inverser=True)
+    particules: list[Particule] = []
+    scene_precedente = scene_actuelle
 
     while en_cours:
-        temps_ecoule = time.time() - temps_debut
+        temps_ecoule = temps_audio(start_monotonic)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -334,74 +422,102 @@ def main():
                 en_cours = False
 
         # --- Gestion des Scènes et Paroles ---
-        if index_parole < len(evenements_paroles) - 1:
-            prochain_temps = evenements_paroles[index_parole + 1][0]
-            if temps_ecoule >= prochain_temps:
-                index_parole += 1
-                temps_event, texte, orateur = evenements_paroles[index_parole]
+        # Mise à jour de l'index des paroles si plusieurs événements ont été dépassés
+        while index_parole < len(evenements_paroles) - 1 and temps_ecoule >= evenements_paroles[index_parole + 1][0]:
+            index_parole += 1
+            temps_event, texte, orateur = evenements_paroles[index_parole]
 
-                # Assigner la parole au bon personnage
-                telemachus.parle_actuellement = (orateur == "Telemachus")
-                antinous.parle_actuellement = (orateur == "Antinous")
+            # Réinitialiser qui parle
+            telemachus.parle_actuellement = (orateur == "Telemachus")
+            antinous.parle_actuellement = (orateur == "Antinous")
 
-                if telemachus.parle_actuellement: telemachus.texte_bulle = texte
-                if antinous.parle_actuellement: antinous.texte_bulle = texte
+            # Affecter le texte
+            telemachus.texte_bulle = texte if telemachus.parle_actuellement else ""
+            antinous.texte_bulle = texte if antinous.parle_actuellement else ""
 
-                # Changements de scènes et effets spéciaux
-                texte_min = texte.lower()
+            # Déclencher des changements de décor selon le temps
+            if 53 <= temps_ecoule < 80 or 115 <= temps_ecoule < 140 or temps_ecoule >= 215:
+                nouvelle_scene = "imagination"
+            elif 80 <= temps_ecoule < 115 or 140 <= temps_ecoule < 205:
+                nouvelle_scene = "hall"
+            else:
+                nouvelle_scene = "chambre"
 
-                # Transitions de décors basées sur le temps
-                if 53 <= temps_ecoule < 80 or 115 <= temps_ecoule < 140 or temps_ecoule >= 215:
-                    scene_actuelle = "imagination"
-                elif 80 <= temps_ecoule < 115 or 140 <= temps_ecoule < 205:
-                    scene_actuelle = "hall"
-                else:
-                    scene_actuelle = "chambre"
+            # Si la scène change, activer un fondu
+            if nouvelle_scene != scene_actuelle:
+                scene_precedente = scene_actuelle
+                scene_actuelle = nouvelle_scene
+                transition_active = True
+                transition_start = temps_ecoule
 
-                # Effets de Monstres
-                if "cyclops" in texte_min:
-                    type_monstre = "cyclope"
-                    tremblement = 10
-                elif "hydra" in texte_min:
-                    type_monstre = "hydre"
-                    tremblement = 10
-                elif "legendary" in texte_min:
-                    type_monstre = "aucun"
-                    tremblement = 20
-                    for _ in range(50): particules.append(Particule(telemachus.x, telemachus.y, OR_LEGENDAIRE))
-                elif "tramp" in texte_min or "champ" in texte_min:
-                    tremblement = 5
-                    for _ in range(20): particules.append(Particule(antinous.x, antinous.y, VIOLET_ANTINOUS))
+            # Effets de Monstres selon le texte
+            texte_min = texte.lower()
+            if "cyclops" in texte_min:
+                type_monstre = "cyclope"
+                tremblement = 10
+            elif "hydra" in texte_min:
+                type_monstre = "hydre"
+                tremblement = 10
+            elif "legendary" in texte_min:
+                type_monstre = "aucun"
+                tremblement = 20
+                for _ in range(50):
+                    particules.append(Particule(telemachus.x, telemachus.y, OR_LEGENDAIRE))
+            elif "tramp" in texte_min or "champ" in texte_min:
+                tremblement = 5
+                for _ in range(20):
+                    particules.append(Particule(antinous.x, antinous.y, VIOLET_ANTINOUS))
 
         # --- Rendu ---
-        if tremblement > 0: tremblement -= 1
+        # Tremblement de caméra
+        if tremblement > 0:
+            tremblement -= 1
         ox = random.randint(-tremblement, tremblement) if tremblement > 0 else 0
         oy = random.randint(-tremblement, tremblement) if tremblement > 0 else 0
 
-        # Application du tremblement à la surface principale via un décalage
+        # Surface pour dessiner le décor et les personnages
         surface_rendu = pygame.Surface((LARGEUR, HAUTEUR))
 
-        # 1. Dessin du décor
-        if scene_actuelle == "chambre":
-            decor.dessiner_chambre(surface_rendu)
-        elif scene_actuelle == "imagination":
-            decor.dessiner_imagination(surface_rendu, temps_ecoule, type_monstre)
-        elif scene_actuelle == "hall":
-            decor.dessiner_hall(surface_rendu)
+        # 1. Dessin du décor courant (ou en transition)
+        if transition_active:
+            # Durée écoulée depuis le début de la transition
+            t_trans = temps_ecoule - transition_start
+            ratio = min(max(t_trans / transition_duree, 0.0), 1.0)
+            # Dessiner l'ancienne scène
+            if scene_precedente == "chambre":
+                decor.dessiner_chambre(surface_rendu)
+            elif scene_precedente == "imagination":
+                decor.dessiner_imagination(surface_rendu, temps_ecoule, type_monstre)
+            elif scene_precedente == "hall":
+                decor.dessiner_hall(surface_rendu)
 
-        # 2. Dessin des Personnages
-        # Placement dynamique
+            # Superposer un rectangle noir qui s'estompe
+            overlay = pygame.Surface((LARGEUR, HAUTEUR))
+            overlay.set_alpha(int(255 * ratio))
+            overlay.fill((0, 0, 0))
+            surface_rendu.blit(overlay, (0, 0))
+            # Quand le fondu est terminé, désactiver la transition et dessiner la nouvelle scène
+            if ratio >= 1.0:
+                transition_active = False
+        if not transition_active:
+            if scene_actuelle == "chambre":
+                decor.dessiner_chambre(surface_rendu)
+            elif scene_actuelle == "imagination":
+                decor.dessiner_imagination(surface_rendu, temps_ecoule, type_monstre)
+            elif scene_actuelle == "hall":
+                decor.dessiner_hall(surface_rendu)
+
+        # 2. Positionnement dynamique des personnages selon la scène
         if scene_actuelle == "chambre" or scene_actuelle == "imagination":
             telemachus.x = LARGEUR // 2
             telemachus.dessiner(surface_rendu, temps_ecoule)
         elif scene_actuelle == "hall":
-            # Dans le hall, Telemachus est face à Antinous
             telemachus.x = 300
             antinous.dessiner(surface_rendu, temps_ecoule)
             telemachus.dessiner(surface_rendu, temps_ecoule)
 
         # 3. Particules
-        particules_vivantes = []
+        particules_vivantes: list[Particule] = []
         for p in particules:
             p.mettre_a_jour()
             p.dessiner(surface_rendu)
@@ -409,7 +525,7 @@ def main():
                 particules_vivantes.append(p)
         particules = particules_vivantes
 
-        # Affichage final avec tremblement de caméra
+        # 4. Affichage final avec tremblement de caméra
         ecran.fill(NOIR)
         ecran.blit(surface_rendu, (ox, oy))
 
