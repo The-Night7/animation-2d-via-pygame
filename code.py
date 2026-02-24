@@ -35,50 +35,70 @@ except:
     police_texte = pygame.font.Font(None, 32)
 
 # --- Synchronisation : Timestamps et paroles ---
-# Basé sur la vidéo YouTube "Legendary | EPIC: The Musical Animatic"
+# Mis à jour avec les paroles complètes
 evenements_paroles = [
     (0.0, ""),
-    (16.0, "It's just me myself and I..."),
-    (20.0, "Stuck in my bedroom living in this world you left behind"),
-    (25.0, "Dreaming of all these monsters that I'll never get to fight"),
-    (33.0, "Cuz I'm stuck with your stories but no clue who you are"),
-    (38.0, "No idea if you're dead or just too far"),
-    (42.0, "Somebody tell me... Come and give me a sign"),
-    (48.0, "If I fight those monsters is it you I'll fight?"),
-    (53.0, "If so then give me sirens and a cyclops!"),
-    (58.0, "Give me giants and a hydra!"),
-    (62.0, "I know life and fate are scary..."),
-    (65.0, "But I want to be LEGENDARY!"),
-    (81.0, "There are strangers in our halls trying to win the heart of my mom"),
-    (88.0, "108 old faces who call me small"),
-    (91.0, "They keep taking space and it's not much longer we can stall"),
-    (97.0, "Cuz they're getting impatient, dangerous too"),
-    (102.0, "And I would fight them if I was half as strong as you"),
-    (108.0, "Somebody help me... Come and give me the strength"),
-    (112.0, "Can I do whatever it takes to keep my mom safe?"),
-    (114.0, "If so then give me sirens and a cyclops!"),
-    (121.0, "Give me giants and a hydra!"),
-    (126.0, "I know life and fate are scary..."),
-    (129.0, "But I want to be LEGENDARY!"),
-    (138.0, "Where is he? Where is the man who loved you?"),
-    (146.0, "Where is he? Where is the man with whom you'll spend your life?"),
-    (153.0, "Cuz it's been 20 years..."),
-    (155.0, "Just give me a chance, a single opportunity"),
-    (161.0, "And I'll overcome these obstacles and scrutiny"),
-    (164.0, "Boy, when's your tramp of a mother going to choose a new husband?"),
-    (170.0, "Why don't you open her room so we can have fun with her?"),
-    (174.0, "Don't you dare call my mother a tramp!"),
-    (178.0, "I just did. What you gonna do about it, champ?"),
-    (186.0, "Somebody tell me... come and give me a sign!"),
-    (190.0, "If I fight this monster, is it you I'll find?!"),
-    (195.0, "It's just me myself and I..."),
-    (200.0, "Stuck in my bedroom living in this world you left behind"),
-    (204.0, "Dreaming of all these monsters that I'll never get to fight"),
-    (211.0, "Cuz I'm stuck with your stories but no clue who you are"),
-    (218.0, "No idea if you're dead or just too far"),
-    (221.0, "Somebody tell me... come and give me a sign..."),
-    (228.0, "If I fight those monsters..."),
-    (232.0, "...")  # Fin
+    (15.0, "It's just me, myself, and I"),
+    (18.5, "Stuck in my bedroom"),
+    (21.0, "Living in this world you left behind"),
+    (24.5, "Dreaming of all these monsters"),
+    (27.5, "That I'll never get to fight"),
+    (30.0, "But boy, I wish I could"),
+    (32.5, "So I could bring this world some light"),
+    (35.5, "'Cause I'm stuck with your stories"),
+    (38.0, "But no clue who you are"),
+    (40.0, "And no idea if you're dead or just too far"),
+    (43.5, "Somebody tell me, come and give me a sign"),
+    (49.0, "If I fight those monsters, is it you I'll find?"),
+    (53.5, "If so, then..."),
+    (55.0, "Give me sirens and a cyclops"),
+    (58.0, "Give me giants and a hydra"),
+    (61.0, "I know life and fate are scary"),
+    (64.0, "But I wanna be legendary"),
+    (68.0, "I'll fight the harpies and chimeras"),
+    (71.0, "The Minotaurs, even Cerberus"),
+    (74.0, "I know life and fate are scary"),
+    (77.0, "But I wanna be l-l-l-l legendary"),
+    (83.0, "There are strangers in our halls"),
+    (86.0, "Trying to win the heart of my mom"),
+    (89.0, "But she is standing tall"),
+    (91.5, "A hundred eight old faces of men who call me small"),
+    (95.0, "They keep taking space"),
+    (97.0, "And it's not much longer we can stall"),
+    (99.5, "'Cause they're getting impatient"),
+    (102.0, "Dangerous too and I would fight them"),
+    (104.5, "If I was half as strong as you"),
+    (108.0, "Somebody help me"),
+    (110.5, "Come and give me the strength"),
+    (113.0, "Can I do whatever it takes to keep my mom safe?"),
+    (116.5, "If so, then..."),
+    (118.0, "Give me sirens and a cyclops"),
+    (121.0, "Give me giants and a hydra"),
+    (124.0, "I know life and fate are scary"),
+    (127.0, "But I wanna be legendary"),
+    (130.0, "I'll fight the harpies and chimeras"),
+    (133.0, "The Minotaurs, even Cerberus"),
+    (136.0, "I know life and fate are scary"),
+    (139.0, "But I wanna be legendary"),
+    (145.0, "Where is he?"),
+    (148.0, "Where is the man who'll have you to wife? Oh-oh"),
+    (155.0, "Where is he?"),
+    (158.0, "Where is the man with whom you'll spend your life?"),
+    (165.0, "'Cause it's been twenty years (twenty years)"),
+    (168.0, "And we still have no king"),
+    (171.0, "Give me a chance, a single opportunity and"),
+    (175.0, "I'll overcome these obstacles and scrutiny and"),
+    (179.0, "Boy"),
+    (181.0, "When's your tramp of a mother gonna choose a new husband? (Oh)"),
+    (187.0, "Why don't you open her room so we can have fun with her?"),
+    (193.0, "Don't you dare call my mother a tramp (Oh)"),
+    (197.0, "I just did"),
+    (200.0, "Whatchu gonna do about it, champ?"),
+    (206.0, "Somebody tell me"),
+    (210.0, "Come and give me a sign"),
+    (216.0, "If I fight this monster"),
+    (221.0, "Is it you I'll find?"),
+    (228.0, "...")  # Fin
 ]
 
 
@@ -218,7 +238,10 @@ def main():
 
                 # Déclenchement d'effets visuels selon les mots clés
                 texte_min = texte_actuel.lower()
-                if "cyclops" in texte_min or "hydra" in texte_min or "monsters" in texte_min or "monster," in texte_min:
+                mots_monstres = ["cyclops", "hydra", "monsters", "monster", "harpies", "chimeras", "minotaurs",
+                                 "cerberus"]
+
+                if any(mot in texte_min for mot in mots_monstres):
                     # Apparition des monstres (explosions rouges sur les bords)
                     particules.extend(
                         generer_explosion(random.randint(50, LARGEUR - 50), random.randint(50, HAUTEUR - 50),
@@ -230,7 +253,7 @@ def main():
                     particules.extend(generer_explosion(centre_x, centre_y, OR_LEGENDAIRE, 300, 20, 20))
                     intensite_fond = 150
                     tremblement = 20
-                elif "tramp" in texte_min or "champ" in texte_min or "strangers" in texte_min or "108" in texte_min:
+                elif "tramp" in texte_min or "champ" in texte_min or "strangers" in texte_min or "hundred" in texte_min:
                     # Apparition des prétendants (Antinous - Violet)
                     particules.extend(
                         generer_explosion(random.randint(100, LARGEUR - 100), random.randint(100, HAUTEUR - 100),
@@ -266,7 +289,7 @@ def main():
             etoile.dessiner(ecran)
 
         # Onde sonore visuelle (cercles concentriques)
-        if temps_ecoule > 16:
+        if temps_ecoule > 15:
             for i in range(3):
                 rayon_onde = rayon_perso + 20 + (i * 30) + (battement * 1.5)
                 alpha_onde = max(0, 100 - i * 30 + (intensite_fond // 4))
@@ -307,7 +330,7 @@ def main():
             pygame.draw.rect(surf_fond_texte, (0, 0, 0, 180), surf_fond_texte.get_rect(), border_radius=15)
 
             # Bordure dynamique du texte
-            couleur_bordure = OR_LEGENDAIRE if "LEGENDARY" in texte_actuel else BLEU_TELEMACHUS
+            couleur_bordure = OR_LEGENDAIRE if "legendary" in texte_actuel.lower() else BLEU_TELEMACHUS
             pygame.draw.rect(surf_fond_texte, couleur_bordure, surf_fond_texte.get_rect(), width=2, border_radius=15)
 
             ecran.blit(surf_fond_texte, (rect_fond.x, rect_fond.y))
