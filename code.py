@@ -5,32 +5,32 @@ Ce script est dérivé de la version fournie mais apporte plusieurs
 améliorations pour rendre l'animation plus immersive et, surtout,
 pour synchroniser les textes avec la musique de façon plus fiable.
 
-Principales améliorations :
+Principales améliorations :
 
-1. **Synchronisation audio précise** : utilisation de
+1. **Synchronisation audio précise** : utilisation de
    `pygame.mixer.music.get_pos()` pour récupérer la position réelle
    de lecture de la musique (en millisecondes). Selon la
    documentation officielle de Pygame, cette méthode renvoie le
-   nombre de millisecondes écoulées depuis le début de la lecture 【294909052533098†L279-L283】.
+   nombre de millisecondes écoulées depuis le début de la lecture 【294909052533098†L279-L283】.
    Cela permet de synchroniser les événements même si l'animation
    commence avec un léger délai.
 
-2. **Gestion robuste des événements** : la boucle principale
+2. **Gestion robuste des événements** : la boucle principale
    utilise maintenant une boucle `while` pour mettre à jour les
    dialogues et les scènes dès que plusieurs événements se sont
    déclenchés entre deux frames. Cela évite de rater un changement
    lors d'une baisse momentanée de FPS.
 
-3. **Transitions plus douces** : ajout d'un fondu enchaîné entre les
+3. **Transitions plus douces** : ajout d'un fondu enchaîné entre les
    décors lorsque la scène change. Un rectangle noir semi-transparent
-   est superposé pendant la durée du fondu (par défaut 1 seconde).
+   est superposé pendant la durée du fondu (par défaut 1 seconde).
 
-4. **Paramètres configurables** : variables en haut de fichier
+4. **Paramètres configurables** : variables en haut de fichier
    permettent d'ajuster le décalage éventuel de la musique,
    l'intensité et la durée du tremblement de caméra, la durée du
    fondu, etc.
 
-5. **Code structuré** : quelques fonctions utilitaires supplémentaires
+5. **Code structuré** : quelques fonctions utilitaires supplémentaires
    rendent le code plus lisible et facilitent son adaptation.
 
 Pour tester ce script, assurez‑vous d'avoir le fichier
@@ -187,51 +187,94 @@ class Personnage:
         self.texte_bulle = ""
 
     def dessiner(self, surface: pygame.Surface, temps: float) -> None:
-        """Dessine le personnage sur la surface en animant la respiration et les bras."""
+        """Dessine le personnage avec des détails (cheveux, yeux, moustache) et anime la respiration et les bras."""
         # Animation de respiration
         respiration = math.sin(temps * 3) * 3
 
-        # Coordonnées du corps
+        # Position du corps
         t_x = self.x
         t_y = self.y + respiration
         hauteur_tronc = 70 * self.taille
         largeur_epaules = 30 * self.taille
 
-        # Si le personnage parle, il bouge les bras
+        # Mouvement des bras lors de la parole
         mouvement_bras = math.sin(temps * 15) * 15 if self.parle_actuellement else 0
         direction = -1 if self.inverser else 1
 
-        # Tronc (Tunique)
+        # Tronc (tunique)
         rect_tunique = pygame.Rect(t_x - largeur_epaules // 2, t_y, largeur_epaules, hauteur_tronc)
         pygame.draw.rect(surface, self.couleur_vetement, rect_tunique, border_radius=8)
 
-        # Tête
+        # Calcul de la tête
         rayon_tete = 22 * self.taille
-        pygame.draw.circle(surface, PEAU, (int(t_x), int(t_y - rayon_tete + 5)), int(rayon_tete))
+        centre_tete = (int(t_x), int(t_y - rayon_tete + 5))
 
-        # Visage : bouche animée
-        # Pour donner l'impression que le personnage parle, on anime la hauteur de la bouche
-        # lorsque ``parle_actuellement`` est vrai. Le mouvement se base sur une fonction sinusoïdale
-        # afin d'ouvrir et fermer la bouche à un rythme régulier. S'il ne parle pas, la bouche est
-        # simplement une fine ligne. Cette technique est une approximation simple du mouvement
-        # des lèvres, mais elle ajoute du dynamisme à l'animatic.
+        # Couleurs de cheveux et moustache selon le personnage
+        if self.nom == "Telemachus":
+            couleur_cheveux = (80, 50, 20)
+            couleur_moustache = None
+        elif self.nom == "Antinous":
+            couleur_cheveux = (30, 10, 50)
+            couleur_moustache = (50, 20, 70)
+        else:
+            couleur_cheveux = (60, 40, 20)
+            couleur_moustache = None
+
+        # Cheveux : ellipse au-dessus de la tête
+        hair_width = int(rayon_tete * 2.2)
+        hair_height = int(rayon_tete * 1.2)
+        hair_rect = pygame.Rect(int(t_x - hair_width / 2), int(t_y - rayon_tete - 10), hair_width, hair_height)
+        pygame.draw.ellipse(surface, couleur_cheveux, hair_rect)
+
+        # Tête par-dessus
+        pygame.draw.circle(surface, PEAU, centre_tete, int(rayon_tete))
+
+        # Yeux et pupilles
+        eye_offset_x = 8 * self.taille
+        eye_offset_y = 5 * self.taille
+        eye_width = 6 * self.taille
+        eye_height = 6 * self.taille
+        for signe in (-1, 1):
+            eye_center_x = t_x + signe * eye_offset_x
+            eye_center_y = centre_tete[1] - eye_offset_y
+            eye_rect = pygame.Rect(int(eye_center_x - eye_width / 2), int(eye_center_y - eye_height / 2), int(eye_width), int(eye_height))
+            pygame.draw.ellipse(surface, (255, 255, 255), eye_rect)
+            pupil_size = int(2 * self.taille)
+            pygame.draw.circle(surface, NOIR, (int(eye_center_x), int(eye_center_y)), pupil_size)
+
+        # Sourcils
+        brow_offset_y = eye_offset_y + 5 * self.taille
+        brow_length = 10 * self.taille
+        for signe in (-1, 1):
+            start_x = t_x + signe * eye_offset_x - brow_length / 2
+            start_y = centre_tete[1] - brow_offset_y
+            end_x = t_x + signe * eye_offset_x + brow_length / 2
+            end_y = centre_tete[1] - brow_offset_y - 2
+            pygame.draw.line(surface, couleur_cheveux, (int(start_x), int(start_y)), (int(end_x), int(end_y)), 2)
+
+        # Bouche
         mouth_width = 15 * self.taille
         if self.parle_actuellement:
-            # Hauteur variable entre 4 et 12 pixels selon l'onde sinusoïdale
             mouth_height = max(4, 8 + math.sin(temps * 12) * 4)
         else:
             mouth_height = 2
-        mouth_y = (t_y - rayon_tete + 20)  # Position verticale approximative de la bouche
+        mouth_y = (t_y - rayon_tete + 20)
         mouth_rect = pygame.Rect(int(t_x - mouth_width / 2), int(mouth_y), int(mouth_width), int(mouth_height))
-        # Dessiner une ellipse noire pour représenter la bouche
         pygame.draw.ellipse(surface, NOIR, mouth_rect)
 
-        # Bras (Lignes)
+        # Moustache
+        if couleur_moustache:
+            moustache_width = 18 * self.taille
+            moustache_height = 6 * self.taille
+            moustache_rect = pygame.Rect(int(t_x - moustache_width / 2), int(mouth_y - 4), int(moustache_width), int(moustache_height))
+            pygame.draw.ellipse(surface, couleur_moustache, moustache_rect)
+
+        # Bras
         epaule_x = t_x + (15 * direction * self.taille)
         pygame.draw.line(surface, PEAU, (t_x, t_y + 10),
                          (epaule_x + 10 * direction + mouvement_bras, t_y + 40 - mouvement_bras), int(8 * self.taille))
-        pygame.draw.line(surface, PEAU, (t_x, t_y + 10), (t_x - (15 * direction) - mouvement_bras, t_y + 40),
-                         int(8 * self.taille))
+        pygame.draw.line(surface, PEAU, (t_x, t_y + 10),
+                         (t_x - (15 * direction) - mouvement_bras, t_y + 40), int(8 * self.taille))
 
         # Jambes
         pygame.draw.line(surface, PEAU, (t_x - 10, t_y + hauteur_tronc),
@@ -273,18 +316,45 @@ class Decor:
     """Dessine les différents décors de l'animatic (chambre, imagination, hall)."""
 
     def dessiner_chambre(self, surface: pygame.Surface) -> None:
-        # Murs sombres
+        """Dessine la chambre avec un décor plus détaillé (sol, lit, oreiller, couverture, lampe)."""
+        # Couleur de fond pour les murs
         surface.fill((20, 25, 35))
-        # Fenêtre
+
+        # Sol en planches de bois
+        pygame.draw.rect(surface, (45, 35, 30), (0, 550, LARGEUR, 150))
+        for x in range(0, LARGEUR, 60):
+            pygame.draw.line(surface, (35, 25, 20), (x, 550), (x, HAUTEUR), 2)
+
+        # Fenêtre avec barreaux
         pygame.draw.rect(surface, (10, 15, 25), (700, 100, 200, 300))
-        pygame.draw.rect(surface, (40, 50, 70), (700, 100, 200, 300), 5)  # Cadre
-        pygame.draw.line(surface, (40, 50, 70), (800, 100), (800, 400), 5)  # Barreaux
+        pygame.draw.rect(surface, (40, 50, 70), (700, 100, 200, 300), 5)
+        pygame.draw.line(surface, (40, 50, 70), (800, 100), (800, 400), 5)
         pygame.draw.line(surface, (40, 50, 70), (700, 250), (900, 250), 5)
-        # Étoiles par la fenêtre
+
+        # Quelques étoiles visibles à travers la fenêtre
         for _ in range(5):
             pygame.draw.circle(surface, BLANC, (random.randint(710, 890), random.randint(110, 390)), 1)
-        # Lit (ombre de décor)
-        pygame.draw.rect(surface, (30, 35, 45), (50, 500, 400, 200), border_radius=20)
+
+        # Lit avec matelas, couverture et oreiller
+        bed_x, bed_y, bed_w, bed_h = 70, 450, 380, 180
+        # Cadre du lit
+        pygame.draw.rect(surface, (80, 50, 40), (bed_x, bed_y, bed_w, bed_h), border_radius=15)
+        # Couverture
+        pygame.draw.rect(surface, (50, 90, 150), (bed_x + 10, bed_y + 60, bed_w - 20, bed_h - 70), border_radius=15)
+        # Oreiller
+        pygame.draw.rect(surface, (220, 220, 220), (bed_x + 20, bed_y + 10, bed_w - 40, 40), border_radius=10)
+
+        # Table de chevet
+        table_x, table_y = bed_x + bed_w + 30, bed_y + 60
+        pygame.draw.rect(surface, (60, 40, 30), (table_x, table_y, 40, 80), border_radius=5)
+        # Base de la lampe
+        pygame.draw.rect(surface, (80, 60, 50), (table_x + 5, table_y - 20, 30, 20))
+        # Abat-jour de la lampe
+        pygame.draw.polygon(surface, (200, 180, 120), [
+            (table_x + 20, table_y - 20 - 30),
+            (table_x + 5,  table_y - 20),
+            (table_x + 35, table_y - 20)
+        ])
 
     def dessiner_imagination(self, surface: pygame.Surface, temps: float, type_monstre: str = "aucun") -> None:
         # Vide spatial / Esprit
